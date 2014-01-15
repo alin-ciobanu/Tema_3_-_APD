@@ -1,0 +1,10 @@
+Tema 3 APD - Calcul paralel folosind MPI
+
+Student: Ciobanu Alin Emanuel
+Grupa: 332 CC
+
+
+Detalii de implementare
+
+Am citit in procesul root primitivele de intrare si le-am trimis fiecarui proces in parte. Procesele si-au stabilit in functie de rank-ul lor partea din matrice pe care trebuie sa o calculeze. Impartirea s-a facut pe axa OX. Procesele si-au luat coloanele dintre rank/size si (rank+1)/size. Dupa for-ul pe OY, fiecare proces trimite vectorul coloana catre procesul root. Am adaugat vectorului id-ul coloanei din matricea finala. Procesul root primeste fiecare vector si il scrie in matrice in functie de id-ul primit. Inainte de primirea vectorului, procesele fac schimb de un int prin care procesele semnaleaza la root daca au terminat de calculat toate coloanele sau nu. Procesul root scrie la final matricea intr-un fisier imagine.
+

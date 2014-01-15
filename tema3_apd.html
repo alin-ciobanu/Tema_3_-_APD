@@ -1,0 +1,132 @@
+﻿<div role="main"><span id="maincontent"></span><h2 class="main">Tema 3 APD - Calcul paralel folosind MPI</h2><div id="intro" class="box generalbox boxaligncenter"><div class="no-overflow"><h2>Calcul paralel folosind MPI</h2>
+<h6>Responsabili de temă: Mihai Carabaș, Larisa Grigore</h6>
+<h6>Data publicării: 30.11.2013</h6>
+<h6>Data ultimei modificări a enunţului: 30.11.2013</h6>
+<h6>Termenul de predare: &nbsp;14.12.2013, ora 23:55</h6>
+<p>&nbsp;</p>
+<h2>Cerință</h2>
+<p>Să se scrie un program care să calculeze mulțimile Mandelbrot [1] și Julia [2] pentru o funcție polinomială complexă de forma&nbsp;<em>f(z)=z<sup>2</sup>+c</em> şi să le afişeze sub formă de imagini grayscale. Programul va fi scris in C/C++ și va fi paralelizat utilizând MPI.</p>
+<h2>Definiții</h2>
+<h3>1. Mulțimea Mandelbrot&nbsp;</h3>
+<p>Fie familia de polinoame complexe <em>P<sub>c</sub>: ℂ→ℂ</em> , definite de&nbsp;<em>P<sub>c</sub>(z)=z<sup>2</sup>+c</em> , cu c un numar complex. Definim <em>multimea Mandelbrot</em> ca fiind multimea punctelor c pentru care secventa <em>0,P<sub>c</sub>(0), P<sub>c</sub>(P<sub>c</sub>(0)),...</em> nu tinde către infinit.</p>
+<p style="text-align: center;"><em>M={ c | ∃ s∈ℝ a.i. ∀ n∈ℕ, |P<sub>c</sub><sup>n</sup>(0)|&lt;s }</em></p>
+<p>Generarea și reprezentarea mulțimii Mandelbrot se poate realiza folosind următorul algoritm:</p>
+<table border="0">
+<tbody>
+<tr>
+<td>
+<pre><strong>foreach</strong> c <strong>in</strong> the complex plane <strong>do</strong><br>    z ← 0 + 0i<br>    step ← 0<br>    <strong>while</strong> |z| &lt; 2 <strong>and</strong> step &lt; MAX_STEPS <strong>do</strong><br>        z ← z*z + c<br>        step ← step + 1<br>    color ← step <strong>mod</strong> NUM_COLORS<br>    plot(c.x,c.y,color)</pre>
+</td>
+<td><img src="https://lh4.googleusercontent.com/LbE_epSOuyUoJVFZc40jeKxabaaG3GpZGyuCaFLA9Rin8zQYLuePEiW8Xc5p9EU_J9Gj4YDbLBK5s7Ff9VKyO-rnoV4XUgJCf0Xm_XG-NXXbXZlwTc_f" id="internal-source-marker_0.5850734381981465" height="253px;" width="253px;"></td>
+</tr>
+</tbody>
+</table>
+<h3>2. Mulțimi Julia&nbsp;</h3>
+<p><br>Fie <em>f(z):&nbsp;ℂ→ℂ, f(z)=P(z)/Q(z)</em> o funcție rațională complexă. <em>Mulțimea Julia plină</em> <em>J<sub>f</sub></em> a funcției este mulțimea punctelor din planul complex care au o orbită mărginită în raport cu <em>f</em>.</p>
+<p style="text-align: center;"><em>J<sub>f </sub>= { z<em>∈<em>ℂ</em></em> | ∃ s∈ℝ a.i. ∀ n∈ℕ, |f <sup>n</sup>(z)|&lt;s }</em></p>
+<p>Generarea și reprezentarea mulțimii Julia pline pentru o functie <em>f(z)=z<sup>2</sup>+c</em> se pot realiza folosind următorul algoritm:&nbsp;</p>
+<table border="0">
+<tbody>
+<tr>
+<td>
+<pre><strong>foreach</strong> z <strong>in</strong> the complex plane <strong>do</strong><br>    step ← 0<br>    <strong>while</strong> |z| &lt; 2 <strong>and</strong> step &lt; MAX_STEPS <strong>do</strong><br>        z ← z*z + c<br>        step ← step + 1<br>    color ← step <strong>mod</strong> NUM_COLORS<br>    plot(z.x,z.y,color)</pre>
+</td>
+<td><img src="https://lh4.googleusercontent.com/Yv5oaWlUiKdkXwPtynePpApyPYCOf-Q9LPlz-UjLeWQcOWcvCzcFLOAazHWQ0FZSOAqSPl_-FNuuBFV965xFe1urvEV-4d10lrVHndGT_45upGOPSMBT" id="internal-source-marker_0.5850734381981465" height="279px;" width="279px;"></td>
+</tr>
+</tbody>
+</table>
+<h2>Paralelizare</h2>
+<pre></pre>
+<p>Cei doi algoritmi se vor paraleliza folosind MPI, procesele lucrând pe submulțimi de date aproximativ egale. Astfel, un proces master va citi fișierul de intrare, după care va trimite x_min, x_max, y_min, y_max, rezoluția și numărul de iterații celorlaltor procese (se consideră deci că <strong>doar master-ul</strong> are acces la fișier și la aceste informații). Mai departe, fiecare proces în parte (<strong>inclusiv master-ul</strong>) își va calcula intervalul din matricea finală de pixeli pe care lucrează și va aplica algoritmul corespunzător asupra acestuia. La final, fiecare proces va trimite master-ului datele calculate, iar master-ul va crea matricea imaginii finale și o va scrie în fișierul PGM de ieșire.</p>
+<pre></pre>
+<h2>Format date de intrare/ieșire</h2>
+<p>Pentru implementarea temei, trebuie să aveți un singur executabil care va primi 2 parametri: numele fișierului de intrare și numele fișierului de ieșire.</p>
+<p><br>Fișierul de intrare va avea următorul format:</p>
+<ul>
+<li>prima linie: un întreg care definește tipul de mulțime care va fi generată (0 - pentu calculul mulțimii Mandelbrot; 1 - calculul mulțimii Julia)</li>
+<li>a doua linie: 4 numere reale (x_min, x_max, y_min, y_max) separate de spații, care definesc subspațiul din planul complex pentru care se realizează calculul. Intervalele pe care se va lucra sunt [x_min,x_max) si [y_min,y_max).</li>
+<li>a treia linie: un număr real care definește rezoluția (pasul) în cadrul subspațiului ales</li>
+<li>a patra linie: numărul maxim de iterații pentru generarea mulțimilor (MAX_STEPS)</li>
+<li>în cazul în care se realizeaza calcului mulțimii Julia (1 pe prima linie), pe cea de-a cincea linie se vor găsi 2 numere reale ( și ) separate de spațiu, care definesc parametrul complex&nbsp; al funcției</li>
+</ul>
+<p><strong>Exemple:</strong></p>
+<table border="0">
+<tbody>
+<tr>
+<td>
+<pre>0<br>-2.5 1.0 -1.0 1.0<br>0.001<br>5000</pre>
+</td>
+<td>&nbsp;</td>
+<td>Va genera mulțimea Mandelbrot între -2.5 și 1.0 pe axa OX, respectiv între -1.0 și 1.0 pe axa OY cu o rezoluție de 0.001. În cadrul algoritmului se va folosi un număr de maximum 5000 iterații.</td>
+</tr>
+<tr>
+<td>
+<pre>1 &nbsp;<br>-2.0 2.0 -2.0 2.0<br>0.001<br>5000<br>-0.6 0</pre>
+</td>
+<td>&nbsp;</td>
+<td>Va genera mulțimea Julia a functiei&nbsp; între -2.0 și 2.0 pe axa OX, respectiv între -2.0 și 2.0 pe axa OY cu o rezoluție de 0.001. În cadrul algoritmului se va folosi un număr de maximum 5000 iterații.</td>
+</tr>
+</tbody>
+</table>
+<p>Rezultatele programului vor fi scrise în fișierul de ieșire în format PGM “plain” [3]. Imaginea rezultată va avea un numar de 256 de nuanțe de gri (valori intre 0 si 255). Dimensiunile imaginii finale se calculează pe baza x_min, x_max, y_min, y_max si rezoluție, conform formulelor:</p>
+<p style="text-align: center;"><em>Width=[(x_max-x_min)/resolution]<br><em>Height=[(y_max-y_min)/resolution]</em><br></em></p>
+<p>În formulele anterioare <em>[x]</em> reprezintă partea întreagă a lui <em>x</em> (cel mai mare număr întreg mai mic sau egal cu <em>x</em>). <br>&nbsp;<br>&nbsp;<br>O imagine de tip PGM “plain” are următorul format:</p>
+<ul>
+<li>&nbsp;&nbsp; prima linie: numărul magic specific formatului (“P2”)</li>
+<li>&nbsp;&nbsp; a doua linie: lățimea și înălțimea imaginii în pixeli (separate de spațiu)</li>
+<li>&nbsp;&nbsp; a treia linie: valoarea maximă de gri (în cazul de față va fi 255, adică NUM_COLORS - 1 din algoritmii prezentați în a doua secțiune)</li>
+<li>&nbsp;&nbsp; următoarele linii: valorile de gri ale pixelilor de pe fiecare linie din imagine, separate prin spații albe.</li>
+</ul>
+<p>Pentru a deschide imagini PGM, puteți folosi diverse editoare de imagini (de exemplu, Gimp).</p>
+<p><strong>Atenție!</strong> Deoarece în cazul coordonatelor matematice, punctul (0,0) se află în partea de stânga-jos a axelor și axa OY este îndreptată în sus, iar pentru coordonatele ecran, punctul (0,0) se află în partea de stânga-sus și axa OY este îndreptată în jos, în momentul în care salvați datele în fișierul de ieșire, va trebui să scrieți coordonatele Y în ordine inversă, așa cum puteți vedea în imaginea de mai jos. Recomandam totusi parcurgerea spatiului complex in ordine directa(de la X_min la X_max si de la Y_min la Y_max) astfel incat sa se evite posibile erori de precizie.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://lh4.googleusercontent.com/Y-vN6ydat_4Lb1fiqBHcfhLksU_EY-yhncg7sGGWYVOOeTh5zh8IsW7B-CVVNOunaRnVN21CUWF5A7h9FzRDsSwLsgQOt11yEeAl0ePg0REIk3RLC-Ui" id="internal-source-marker_0.5850734381981465" height="371px;" width="606px;"></p>
+<h2>Testare</h2>
+<p>Temele se vor testa automat pe CLUSTER. Puteți găsi în secțiunea <strong><a class="autolink" title="Resurse Tema3" href="http://cs.curs.pub.ro/2013/mod/folder/view.php?id=3209">Resurse Tema3</a></strong> un set de teste publice (directorul <em><strong>in/</strong></em> din arhiva) și output-urile de referință (directorul <em><strong>out-ref/</strong></em>) corespunzătoare.&nbsp;Pentru verificarea rezultatului vostru cu cele obținute de noi, puteţi folosi programul <strong><em>imgdiff</em></strong> care se află în arhivă (<em><strong>bin/imgdiff</strong></em> - 64 biti și <em><strong>bin/imgdiff32</strong></em> - 32 biti). Deoarece se lucrează cu valori cu multe zecimale şi cu operaţii de radical şi ridicări la pătrat, pot apărea erori de rotunjire în funcţie de compilatorul folosit. Din această cauză, există posibilitatea ca output-ul vostru să difere un pic de rezultatele noastre, însă <em><strong>imgdiff</strong></em> ia în considerare acest lucru când compară doua fişiere PGM (pe care le primește ca parametri în linia de comandă).</p>
+<h2>Notare</h2>
+<p>Tema se va trimite la adresa&nbsp;<a href="http://vmchecker.cs.pub.ro"><strong>http://vmchecker.cs.pub.ro</strong></a>&nbsp;(login folosind ID-ul de cs.curs.pub.ro după care selectați APD din meniul de sus), într-o arhiva .zip care pe lângă fișierele sursă va trebui să conțină următoarele 2 fișiere:</p>
+<ul>
+<li>Makefile - cu directiva <strong><span style="color: #000000;">build</span>&nbsp;</strong>care compilează tema voastră&nbsp;și generează un executabil numit&nbsp;<span style="color: #000000;"><strong>main</strong></span></li>
+<li>README în care să se descrie pe scurt implementarea temei</li>
+</ul>
+<p><span style="color: #ff0000;"><strong>Atentie!</strong>&nbsp;Toate fișierele vor fi puse în rădăcina arhivei.<br><strong style="line-height: 1.4; color: #ff0000;">Atenție!</strong> NU contează numele arhivei.<br><strong>Atenție!</strong> Testați tema pe cluster. Checker-ul ține cont și de timpii de rulare (tema trebuie să fie scalabilă - dacă se folosesc mai multe procese MPI timpul trebuie să fie mai mic).</span></p>
+<p>Punctajul este divizat după cum urmează:<br>- <strong>80p</strong> - testarea automată pe VMCHECKER<br>- <strong>20p</strong> - claritatea codului și a explicațiilor.</p>
+<p></p>
+<h2>Compilare și Rularea pe cluster</h2>
+<p><strong>1.</strong>&nbsp;student@vm:~$ scp main.c mihai.carabas@fep.grid.pub.ro:</p>
+<p>main.c 100% 179 0.2KB/s 00:00<br><strong></strong></p>
+<p><strong>2.</strong>&nbsp;student@vm:~$ ssh mihai.carabas@fep.grid.pub.ro<br>[mihai.carabas@fep-62-2 ~]$<br><strong></strong></p>
+<p><strong>3.</strong><em>&nbsp;[mihai.carabas@fep-62-2 ~]$&nbsp;<strong>module load libraries/openmpi-1.6-gcc-4.4.6<br></strong></em><strong></strong></p>
+<p><strong>4.<em>&nbsp;</em></strong>[mihai.carabas@fep-62-2 ~]$&nbsp;<strong>mpicc main.c -o main<br></strong><strong></strong></p>
+<p><strong>5.</strong>&nbsp;[mihai.carabas@fep-62-2 ~]$ cat script.sh</p>
+<p>#!/bin/bash</p>
+<p>module load libraries/openmpi-1.6-gcc-4.4.6<br>mpirun ./main $1 $2<br><strong></strong></p>
+<p><strong>6.</strong>&nbsp;[mihai.carabas@fep-62-2 ~]$&nbsp;<strong>&nbsp;qsub -cwd -pe openmpi 4 -q ibm-quad.q script.sh fisier.in fisier.out</strong><br>&nbsp; &nbsp; &nbsp; &nbsp; - 4 - reprezinta numarul de procese MPI lansate<br>&nbsp; &nbsp; &nbsp; &nbsp; - script.sh - scriptul care se va rula pe cluster<br>&nbsp; &nbsp; &nbsp; &nbsp; - fisier.in - fisierul de intrare<br>&nbsp; &nbsp; &nbsp; &nbsp; - fisier.out - fisierul de iesire</p>
+<p><strong>7.</strong>&nbsp;[mihai.carabas@fep-62-2 ~]$&nbsp;<strong>qstat</strong></p>
+<p>job-ID prior name user state submit/start at queue slots ja-task-ID<br>-----------------------------------------------------------------------------------------------------------------<br>532370 0.00000 script.sh mihai.caraba qw 11/25/2013 18:49:19 4</p>
+<p><strong>8.</strong>&nbsp;Output-ul îl găsiți &nbsp;în fișierul script.sh.o532370 (este numele fișierului concatenat cu .o și ID-ul job-ului) după ce job-ul nu mai apare la comanda&nbsp;<strong>qstat.</strong><br>[mihai.carabas@fep-62-2 ~]$ cat script.sh.o532370</p>
+<h2></h2>
+<p><span style="font-size: 1.5em; font-weight: bold; line-height: 1.4;">Referințe</span></p>
+<ol>
+<li><a href="http://en.wikipedia.org/wiki/Mandelbrot_set">http://en.wikipedia.org/wiki/Mandelbrot_set</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Julia_set">http://en.wikipedia.org/wiki/Julia_set</a></li>
+<li><a href="http://netpbm.sourceforge.net/doc/pgm.html">http://netpbm.sourceforge.net/doc/pgm.html</a></li>
+</ol></div></div><div class="submissionstatustable"><h3 class="main">Submission status</h3><div class="box boxaligncenter submissionsummarytable"><table class="generaltable">
+<tbody><tr class="r0">
+<td class="cell c0" style="">Submission status</td>
+<td class="cell c1 lastcol" style="">This assignment does not require you to submit anything online</td>
+</tr>
+<tr class="r1">
+<td class="cell c0" style="">Grading status</td>
+<td class="submissionnotgraded cell c1 lastcol" style="">Not graded</td>
+</tr>
+<tr class="r0">
+<td class="cell c0" style="">Termen predare</td>
+<td class="cell c1 lastcol" style="">sâmbătă, 14 decembrie 2013, 23:55</td>
+</tr>
+<tr class="r1 lastrow">
+<td class="cell c0" style="">Time remaining</td>
+<td class="cell c1 lastcol" style="">The due date for this assignment has now passed</td>
+</tr>
+</tbody>
+</table>
+</div></div></div>
